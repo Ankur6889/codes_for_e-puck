@@ -16,6 +16,7 @@
 #include "leds.h"
 #include "spi_comm.h"
 #include "motors.h"
+#include "sensors/VL53L0X/VL53L0X.h"
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -47,15 +48,42 @@ void move_backward(void)
 	right_motor_set_speed(-1*speed)
 }
 
-void stop(void)
+int nearest_sensor(int a,int b,int c,int d,int e,int f,int g,int h)
 {
-	left_motor_set_speed(0);
-	right_motor_set_speed(0);
+	if (a>b && a>c && a>d && a>e && a>f && a>g && a>h)
+	{
+		return 1;
+	}
+	else if (b>a && b>c && b>d && b>e && b>f && b>g && b>h)
+	{
+		return 2;
+	}
+	else if (c>a && c>b && c>d && c>e && c>f && c>g && c>h)
+	{
+		return 3;
+	}
+	else if (d>a && d>b && d>c && d>e && d>f && d>g && d>h)
+	{
+		return 4;
+	}
+	else if (e>a && e>b && e>c && e>d && e>f && e>g && e>h)
+	{
+		return 5;
+	}
+	else if (f>a && f>b && f>c && f>d && f>e && f>g && f>h)
+	{
+		return 6;
+	}
+	else if (g>a && g>b && g>c && g>d && g>e && g>f && g>h)
+	{
+		return 7;
+	}
+	else if (h>a && h>b && h>c && h>d && h>e && h>f && h>g)
+	{
+		return 8;
+	}
 }
-
-
-
-void blue(int num)
+void bt_prox(int num)
 {
 	char str[100];
 	int str_length;
@@ -78,7 +106,9 @@ int main(void)
     proximity_start();
     calibrate_ir();
     motors_init();
+    VL53L0X_start();
     
+    /* Values for Sensor Calibration 
     int sensor1_cal=300;
     int sensor2_cal=400;
     int sensor3_cal=800;
@@ -87,13 +117,10 @@ int main(void)
     int sensor6_cal=800;
     int sensor7_cal=400;
     int sensor8_cal=300;
+    */
 
-
-    /* Infinite loop. */
-    while (1) {
-    	//waits 1 second
-
-    	/**/
+    while (1) 
+    {
     	int sensor1=get_calibrated_prox(0);
     	int sensor2=get_calibrated_prox(1);
     	int sensor3=get_calibrated_prox(2);
@@ -102,53 +129,60 @@ int main(void)
     	int sensor6=get_calibrated_prox(5);
     	int sensor7=get_calibrated_prox(6);
     	int sensor8=get_calibrated_prox(7);
-
-    	if (sensor1>sensor1_cal || sensor8>sensor8_cal )
+    	
+    	int sensor1_sum=0;
+    	int sensor2_sum=0;
+    	int sensor3_sum=0;
+    	int sensor4_sum=0;
+    	int sensor5_sum=0;
+    	int sensor6_sum=0;
+    	int sensor7_sum=0;
+    	int sensor8_sum=0;
+    	    	
+    for (int i=1;i<=10;i++)
+    {
+    	sensor1_sum=sensor1_sum+sensor1;
+    	sensor2_sum=sensor2_sum+sensor2;
+		sensor3_sum=sensor3_sum+sensor3;
+		sensor4_sum=sensor4_sum+sensor4;
+		sensor5_sum=sensor5_sum+sensor5;
+		sensor6_sum=sensor6_sum+sensor6;
+		sensor7_sum=sensor7_sum+sensor7;
+		sensor8_sum=sensor8_sum+sensor8;
+    }
+    
+    int sensor1_av=sensor1_sum/10;
+    int sensor2_av=sensor2_sum/10;
+    int sensor3_av=sensor3_sum/10;
+    int sensor4_av=sensor4_sum/10;
+    int sensor5_av=sensor5_sum/10;
+    int sensor6_av=sensor6_sum/10;
+    int sensor7_av=sensor7_sum/10;
+    int sensor8_av=sensor8_sum/10;
+    
+    int nearest = nearest_sensor(sensor1_av,sensor2_av,sensor3_av,sensor4_av,sensor5_av,sensor6_av,sensor7_av,sensor8_av);
+    
+    if (nearest==2 || nearest == 3 || nearest == 4 )
+    {
+    	turn_right();
+    }
+    else if ( nearest==5 || nearest == 6 || nearest == 7)
+    {
+    	turn_left();
+    }
+    else
+    {
+    	uint16_t distance=VL53L0X_get_dist_mm();
+    	if (distance > 30 )
     	{
-    		turn_right();
-    		blue(0);
-		blue(7);
-		chThdSleepMilliseconds(100);
-
-    	}
-    	else if (sensor6>sensor6_cal)
+    		move_forward();
+	  	}
+    	else if (distance <20)
     	{
-    		turn_right();
-    		blue(5);
-    		chThdSleepMilliseconds(100);
-
+    		move_backward();
     	}
-    	else if (sensor7>sensor7_cal)
-    	{
-    	    turn_right();
-    	    blue(6);
-    	    chThdSleepMilliseconds(100);
-
-    	}
-    	else if (sensor2>sensor2_cal)
-    	{
-    	    turn_left();
-	    blue(1);
-    	    chThdSleepMilliseconds(100);
-
-    	}
-    	else if (sensor3>sensor3_cal)
-    	{
-    	    turn_left();
-	    blue(2);
-    	    chThdSleepMilliseconds(500);
-
-    	}
-    	else
-    	{
-    	    move_forward();
-    	    chThdSleepMilliseconds(500);
-    	}
-
-
-
-
-
+    }
+        
     }
 }
 
