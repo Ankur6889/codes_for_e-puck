@@ -92,6 +92,14 @@ void bt_prox(int num)
 	e_send_uart1_char(str,str_length);
 }
 
+void bt_distance(void)
+{
+	char str[100];
+	int str_length;
+	uint16_t val=VL53L0x_get_dist_mm(void);
+	str_length=sprintf(str,"Current Distance :%d",val);
+	e_send_uart1_char(str,str_length);
+}
 
 int main(void)
 {
@@ -165,21 +173,29 @@ int main(void)
     if (nearest==2 || nearest == 3 || nearest == 4 )
     {
     	turn_right();
+    	set_front_led(unsigned int 0);
+    	set_body_led(unsigned int 1);
     }
     else if ( nearest==5 || nearest == 6 || nearest == 7)
     {
     	turn_left();
+    	set_front_led(unsigned int 0);
+    	set_body_led(unsigned int 1);
     }
     else
     {
     	uint16_t distance=VL53L0X_get_dist_mm();
+    	set_front_led(unsigned int 1);
+    	set_body_led(unsigned int 0);
     	if (distance > 30 )
     	{
     		move_forward();
+    		bt_distance();
 	  	}
     	else if (distance <20)
     	{
     		move_backward();
+    		bt_distance();
     	}
     }
         
